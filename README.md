@@ -101,21 +101,22 @@ Tool calls are wired through OpenAI function calling. They do not send real emai
 
 ## If I Had 3 More Hours
 
-**Add a web UI.** Right now this runs in the terminal. I would build a simple chat interface in the browser, a phone-call-style screen where you can see the conversation, the pharmacy details at the top, and the mock tool actions appearing as notifications on the side. It would make the demo much easier to show to someone who isn't technical.
+**Persist every call to a database.** Right now each call is saved as a markdown file, which works for a demo but does not scale. I would add Postgres with a `sessions` table storing the pharmacy, duration, intent, outcome, and the full transcript as JSON. That gives you a searchable history of every call. You can pull up any conversation, filter by outcome, or see which pharmacies called twice without booking a demo.
 
-**Make the unknown caller flow smarter.** When a caller isn't in the system, Alex collects their name and Rx volume, but right now that information is only used in the conversation. I would save it to a leads list (a simple JSON file) so every new caller is captured and can be reviewed after the call.
+**Save new leads automatically.** When an unknown caller gives their pharmacy name and Rx volume, that information currently lives only in the conversation. I would write it to a `leads` table the moment Alex collects it, so the sales team has it even if the call ends before any tool is called.
 
-**Add a confidence check before tool calls.** Before Alex books a demo or sends an email, I would add a step where Alex confirms the details back to the caller "Just to confirm, I'm sending the pricing sheet to sarah@healthfirst.com, is that right?" before firing the tool. This mirrors how a real sales rep would behave and prevents mistakes.
+**Add a confirmation step before tool calls.** Before Alex fires `book_demo` or `send_email`, I would make Alex read the details back to the caller first. Something like "Just to confirm, I am sending the pricing sheet to sarah@healthfirst.com, is that right?" This mirrors how a real sales rep behaves and prevents the agent from acting on misheard information.
 
-**Write proper tests.** I would write automated tests for the three core flows: known pharmacy greeting, unknown caller collection, and out-of-scope handling. Not to hit a coverage number, but so anyone picking up this code can run one command and know the agent still behaves correctly after any changes.
+**Wire up the actual integrations.** The mock tools are one function swap away from being real. I would replace `sendEmail()` with a SendGrid API call, `bookDemo()` with Calendly, and `scheduleCallback()` with a HubSpot or Salesforce task. The tool dispatch pipeline is already in place, the integrations just need to be dropped in.
 
---
+---
 
 ## What Comes Next in Production
 
-- Voice layer: Twilio Media Streams → Deepgram STT → ElevenLabs TTS
-- Redis for session state across multiple concurrent calls
-- BullMQ retry queue for tool calls with exponential backoff and failure alerts
-- Live CRM, Calendly, and email integrations
-- HIPAA-compliant transcript storage
+- Voice layer: Twilio Media Streams, Deepgram STT, ElevenLabs TTS, with VAD-based turn detection and sub-1s response latency
+- Redis for session state so multiple concurrent calls can run across separate server instances
+- BullMQ job queue wrapping every tool call with retries, exponential backoff, failure alerts to Slack, and a failed_actions log so nothing silently disappears
+- Postgres to store every session, transcript, and lead captured from unknown callers
+- Live integrations: SendGrid for email, Calendly for demos, HubSpot or Salesforce for CRM
+- HIPAA-compliant infrastructure: transcripts encrypted at rest, no PHI logged in plain text, audit trail on every data access
 
