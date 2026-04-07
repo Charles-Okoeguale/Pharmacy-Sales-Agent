@@ -23,7 +23,13 @@ Then run:
 npm start
 ```
 
-The agent starts immediately. Type your messages and press Enter. Type `exit` to end the call.
+The agent starts immediately. Type your messages and press Enter.
+
+**Ending the call** — there are three ways:
+
+- Type `exit` or `quit` at any point — Alex says a proper goodbye and the call closes.
+- Say something natural like `"okay thanks bye"`, `"that's all"`, `"we're good"`, or `"end the call"` — Alex will ask if you're done, reply `"yes"` and the call closes.
+- If Alex says something like `"have a great day"` during the conversation, the call closes automatically.
 
 ---
 
